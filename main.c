@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <windows.h>
@@ -98,8 +99,12 @@ void entra_texto(COORD inicio, int tam, char *texto){
                 }
         }
     }
-
 }
+
+
+
+
+
 // =================================== FUNÇOES DE SELECAO =========================================
 
 
@@ -230,15 +235,21 @@ typedef struct {
 typedef struct {
     time_t inicio;
     time_t fim;
+    char * nome;
+    char * local;
+}t_evento;
+t_evento *eventos;
+
+typedef struct {
+    time_t inicio;
+    time_t fim;
     t_hora hora_inicio;
     t_hora hora_fim;
     char * nome;
     char * local;
     int recorrente;
     int dias_semana;
-}t_evento;
-
-
+}t_eveRec;
 
 int valida_hora(t_hora hora){
     return ( (hora.hora < 24 && hora.hora >= 0 ) && (hora.min >= 0 && hora.min < 60) );
@@ -246,8 +257,8 @@ int valida_hora(t_hora hora){
 
 
 
-
-void cria_evento (t_evento *evento ,time_t inicio,time_t fim, t_hora hora_inicio , t_hora hora_fim ,char * nome , char * local ,int recorrente, int dias){
+/*
+void cria_evento_recorrente (t_evento *evento ,time_t inicio,time_t fim, t_hora hora_inicio , t_hora hora_fim ,char * nome , char * local ,int recorrente, int dias){
     evento->inicio = inicio;
     evento->fim = fim;
     evento->hora_inicio.hora;
@@ -258,14 +269,28 @@ void cria_evento (t_evento *evento ,time_t inicio,time_t fim, t_hora hora_inicio
     strcpy(evento->local, local);
     evento->recorrente = recorrente;
     evento->dias_semana= dias;
+}*/
+
+void cria_evento (t_evento *evento ,time_t inicio,time_t fim, char * nome , char * local ){
+    char * name;
+    printf(nome);
+    name = malloc(strlen(nome));
+    evento->inicio = inicio;
+    evento->fim = fim;
+    evento->nome = name;
+    evento->local = malloc(strlen (local));
+    strcpy(evento->nome, nome);
+    strcpy(evento->local, local);
 }
+
+
 
 void apaga_evento(t_evento * evento){
     free(evento->nome);
     free(evento->local);
     free(evento);
 }
-
+/*
 void modifica_evento (t_evento *evento ,time_t inicio,time_t fim, t_hora hora_inicio , t_hora hora_fim ,  char * nome , char * local ,int recorrente, int dias){
     evento->inicio = inicio;
     evento->fim = fim;
@@ -277,39 +302,17 @@ void modifica_evento (t_evento *evento ,time_t inicio,time_t fim, t_hora hora_in
     strcpy(evento->local, local);
     evento->recorrente = recorrente;
     evento->dias_semana;
+}*/
+
+void modifica_evento (t_evento *evento ,time_t inicio,time_t fim, t_hora hora_inicio , t_hora hora_fim ,  char * nome , char * local ,int recorrente, int dias){
+    evento->inicio = inicio;
+    evento->fim = fim;
+    realloc(&evento->nome,strlen(nome));
+    realloc(&evento->local, strlen (local));
+    strcpy(evento->nome, nome);
+    strcpy(evento->local, local);
 }
 
-void ordena_data(t_evento * eventos, time_t inicio, int tamanho){
-    int i;
-    for(i = 0; i < ; i++){
-        for(j = i+1; j < tamanho; j++){
-            if(eventos[i]->inicio > eventos[j]->inicio){
-                int aux = eventos[j]->inicio;
-                eventos[j]->inicio = eventos[i]->inicio;
-                eventos[i]->inicio = aux;
-            }
-        }
-    }
-}
-
-int busca_data(t_evento * eventos, time_t inicio, int tamanho){
-    int e, d, meio;
-    e = 0; d = tamanho-1;
-    while(e <= d){
-        meio = (e+d)/2;
-        if(eventos[meio]->inicio == inicio){
-                return meio;
-        }
-        if (inicio > eventos[meio]->inicio){
-            e = meio+1;
-        }
-        else{
-            d = meio-1;
-        }
-
-    }
-    return meio;
-}
 
 void mfgets(char * texto, int tam){
     fgets(texto, tam, stdin);
@@ -317,20 +320,145 @@ void mfgets(char * texto, int tam){
 }
 
 
+// ======= FUNÇOES DE BUSCA POR NOME =================
+
+typedef struct{
+   char * nome;
+   int * posicoes;
+   int tam;
+}t_indice;
+
+int carrega_indice(t_indice ** listaPalavras){
+        int tam , res, elem = 0;
+        int espaco = 0;
+        char nome[80];
+        int posicoes[100];
+        t_indice *listaA = * listaPalavras;
+        FILE * fpt;
+        fpt = fopen("indice.txt", "r");
+        listaA = malloc(100 * sizeof(t_indice));
+        while(res==2){
+            res = fscanf(fpt , "%[^\n]s %d" , &nome , &tam);
+
+            //printf("%s", *eventos[elem]->nome);
+            elem++;
+            espaco--;
+            printf("%d",res);
+            printf("*");
+            if(espaco == 0){
+                espaco = 100;
+                realloc(listaA, (/*elem*/ + 100) * sizeof(t_evento));
+            }
+        }
+        fclose(fpt);
+        *listaPalavras = listaA;
+        return elem;
+}
+
+
+
+
+int busca_indice(t_indice * indice , char * palavra , int tamanho){
+    int esq, dir, meio, comp;
+    while(esq!=dir){
+        meio = (esq+dir)/2;
+        comp = strcmp(palavra, indice[meio].nome);
+        if (comp == 0) return meio;
+        if(comp>0) esq = meio;
+        else dir = meio;
+        }
+
+
+    }
+
+
+
+
+void insere_indice(t_indice * indice , char * palavra, int tam){
+
+}
+
+
+/*
+//Função Ordena por nome do evento.
+
+void ordena_indice(t_indice *name, int tam) {
+    int i, j;
+    t_indice aux;
+    for(i = 1; i < strlen(name) ; i++) {
+        aux = name[i];
+        for(j = i; (j>0) && (strcmp(aux.nome, name[j-1].nome) < 0); j--)
+            name[j] = name[j-1];
+        name[j] = aux;
+    }
+}*/
+
 //int compara_datas(tm data1, tm data_2){
 
-//}
+/*
+void entraData(COORD posicao, int * dia , int *mes , int ano){
+    int ox = inicio.X;
+    int oy = inicio.Y;
+    char c_atual , texto[11];
+    int ncarac=0,i=0;
+    gotoxy(ox , oy);
+    printf("  /  /    ");
+    gotoxy(ox,oy);
+    while(1){
+        c_atual = getch();
+        switch (ncarac){
+        case 0:
+            gotoxy()
+        case 1:
+
+
+        case 2:
+
+
+        case 3:
+        }
+        switch (c_atual){
+            case 13:
+                for (i=0;i<10;i++)
+                    texto[i] = get_char_at_xy(inicio.X+i,inicio.Y);
+                    texto[2]='\0';
+                    texto[5]='\0';
+                    texto[9]='\0';
+                    dia = atoi(&texto);
+                    mes = atoi(&texto[3])
+                    ano = atoi(&texto[6])
+                    return;
+            case 8:
+                if (ncarac > 0){
+                   putchar(8);
+                   putchar(' ');
+                   putchar(8);
+                   ncarac--;
+                }
+                break;
+            default:
+                if(ncarac < tam && ( (isalnum(c_atual)) || c_atual == 32)){
+                    putchar(c_atual);
+                    ncarac++;
+                }
+        }
+    }
+}
+*/
+
+
 
 
 
 
 //==================== FUNÇOES DE ARQUIVO =====================
 
-void grava_eventos(t_evento * eventos){
+void grava_eventos(t_evento * eventos,int tam){
     FILE * fpt;
+    int i;
     fpt = fopen("eventos.txt", "w");
-    while (eventos->inicio!=-10){
-        fprintf(fpt , "%lu %lu %d %d %d %d %d %d %s%s" , eventos->inicio , eventos->fim , eventos->hora_inicio.hora , eventos->hora_inicio.min , eventos->hora_fim.hora , eventos->hora_fim.min , eventos->recorrente , eventos->dias_semana , eventos->nome , eventos->local);
+    for(i = 0; i< tam; i++){
+        fprintf(fpt , "%lu %lu %d %d %d %s%s" , eventos->inicio , eventos->fim , eventos->nome , eventos->local);
         eventos = &eventos[1];
     }
     fclose(fpt);
@@ -348,8 +476,8 @@ int carrega_eventos(t_evento** eventos){
     fpt = fopen("eventos.txt", "r");
     eventoA = malloc(100 * sizeof(t_evento));
     while(res==6){
-        res = fscanf(fpt , "%lu %lu %d %d %d %d %[^\n] \r %[^\n]s" , &inicio , &fim , &hora_inicio , &hora_fim , &recorrente , &dias_semana , nome , local);
-        cria_evento(&eventoA[elem] , inicio , fim , hora_inicio , hora_fim , nome , local , recorrente , dias_semana );
+        res = fscanf(fpt , "%lu %lu %[^\n]s ^\n %[^\n]s" , &inicio , &fim ,  nome , local);
+        cria_evento(&eventoA[elem] , inicio , fim , nome , local);
         //printf("%s", *eventos[elem]->nome);
         elem++;
         espaco--;
@@ -357,7 +485,7 @@ int carrega_eventos(t_evento** eventos){
         printf("*");
         if(espaco == 0){
             espaco = 100;
-            realloc(eventoA, (/elem/ + 100) * sizeof(t_evento));
+            realloc(eventoA, (/*elem*/ + 100) * sizeof(t_evento));
         }
     }
     fclose(fpt);
@@ -366,26 +494,170 @@ int carrega_eventos(t_evento** eventos){
 }
 
 
+int lista_eventos(t_evento * eventos, tm data ,int tam){
+    struct tm tm_hora_zero, tm_hora_23;
+    tm_hora_zero = data;
+    tm_hora_23 = data;
 
+    tm_hora_zero.tm_hour = 0;
+    tm_hora_zero.tm_min = 0;
+    tm_hora_zero.tm_sec = 0;
+    tm_hora_23.tm_hour = 23;
+    tm_hora_23.tm_min = 59;
+    tm_hora_23.tm_sec = 59;
+    time_t hora_zero;
+    int aux = mktime(&tm_hora_zero);
+    time_t hora_meiaNoite;
+    int temp = time(&hora_meiaNoite);
+    int i =0;
+    double difft;
+    time(&hora_zero);
+    time(&hora_meiaNoite);
+    difft = difftime(hora_zero, eventos[i].fim);
+    printf("%f" , difft);
+    return 0;
+    for(; i<tam; i++){
+        if((eventos[i].inicio) <= hora_meiaNoite && (eventos[i].fim) >= hora_zero);
+
+
+    }
+
+}
+
+
+// =========================== FUNÇOES DE INTERFACE PARTE 2 ========================
+
+void insere_evento_arry (t_evento ** eventos , t_evento novoEvento, int tam){
+    int i;
+    t_evento * eventosA;
+    eventosA = *eventos;
+    int posicao = busca_data(eventosA , novoEvento.inicio, tam);
+    eventosA = realloc(eventosA , (tam+1) * sizeof(t_evento));
+    for(i=tam ; tam>posicao; tam--){
+        eventosA[i-1] = eventosA[i];
+    }
+    cria_evento(eventosA, novoEvento.inicio,novoEvento.fim, novoEvento.nome , novoEvento.local);
+}
+
+void inserir_evento(t_evento * eventos , int tam)
+{
+    int j=0, k=0;
+    char nome_evento[81];
+    char descricao[1000];
+    int dia1,mes1,ano1;
+    int dia2,mes2,ano2;
+    int hora1 , min1;
+    int hora2, min2;
+    t_evento evento_Novo;
+    struct tm data;
+    time_t data_inicial;
+    time_t data_final;
+    printf("Insira o nome do evento:");
+    mfgets(nome_evento, sizeof(nome_evento));
+    printf("Insira a descricao do evento:");
+    fgets(descricao, sizeof(descricao), stdin);
+    fflush(stdin);
+    printf("Data inicial:");
+    scanf(" %i %i %i", &dia1 , &mes1, &ano1);
+    printf("Data final:");
+    scanf(" %i %i %i", &dia2, &mes2, &ano2);
+    printf("Hora inicial:");
+    scanf(" %i %i", &hora1 , &min1);
+    printf("Hora final:");
+    scanf(" %i %i", &hora2, &min2);
+    data.tm_hour = hora1;
+    data.tm_min = min1;
+    data.tm_sec = 0;
+    data.tm_mday = dia1;
+    data.tm_yday = mes1;
+    data_inicial = mktime(&data);
+    data.tm_hour = hora2;
+    data.tm_min = min2;
+    data.tm_sec = 0;
+    data.tm_mday = dia2;
+    data.tm_yday = mes2;
+    data_final = mktime(&data);
+    insere_evento_arry(&eventos, evento_Novo , tam);
+}
+
+int busca_data(t_evento * eventos, time_t inicio, int tamanho){
+    int e, d, meio;
+    e = 0; d = tamanho-1;
+    while(e <= d){
+        meio = (e+d)/2;
+        if(eventos[meio].inicio == inicio){
+                return meio;
+        }
+        if (inicio > eventos[meio].inicio){
+            e = meio+1;
+        }
+        else{
+            d = meio-1;
+        }
+
+    }
+    return meio;
+}
+
+
+
+void menu()
+{
+    printf("\t\t\t=====================================================");
+    printf("\n\t\t\t\t\t    >>>  Menu  <<<\n");
+    printf("\t\t\t=====================================================\n");
+    printf("\n1. Inserir um evento");
+    printf("\n2. Alterar um evento");
+    printf("\n3. Apagar um evento");
+    printf("\n4. Listar evento(s)");
+    printf("\n5. Buscar evento");
+    printf("\n0. Sair\n");
+}
 
 
 int main(){
     FILE *arquivo;
-    t_evento eventos[11];
+    t_evento *eventos;
     t_evento  *eventos2;
     time_t seila;
     int i=0, * b;
     char nome[50], local[50];
-    for(;i<3;i++){
-        mfgets(nome, 50);
-        mfgets(local, 50);
-        time(&seila);
-        cria_evento(&eventos[i] , seila , seila , (t_hora){10,10}, (t_hora){10,10} , nome , local , 123 , 1324);
-    }
-    eventos[i].inicio = -10;
-    grava_eventos(eventos);
-            printf("####");
-            system("pause");
+    int resultado_busca[100];
+    int tam = carrega_eventos(&eventos);
+
+
+
+    int escolha;
+    menu();
+    scanf("%d", &escolha);
+    getchar();
+    printf("\n");
+    while (escolha != 0)
+    {
+        switch (escolha)
+        {
+        case 1:
+            inserir_evento(eventos, tam);
+            break;
+        case 4:
+
+            break;
+        default:
+            printf("Opcao invalida! Tente novamente.\n");
+
+        }
+        menu();
+        scanf("%i", &escolha);
+        getchar();
+    return 0;
+}
+
+
+
+
+/*
+
+
     carrega_eventos(&eventos2);
 system("cls");
     tm dataa;
@@ -422,7 +694,7 @@ printf("%ls",L"╔════════════════════�
 
    // valida_data(tm data)  ====>>> retorna 1 se data for válida, retorna 0 se data for inválida;
 
- /*//   int numeroEventos = carrega_eventos(eventos2);
+ ///   int numeroEventos = carrega_eventos(eventos2);
     printf("==%d==", numeroEventos);
 for(i=0;i<numeroEventos;i++)
     //printf("%lu %lu %d %d %s %s" , eventos2[i].inicio , eventos2[i].fim , eventos2[i].recorrente , eventos2[i].dias_semana , eventos2[i].nome , eventos2[i].local);
